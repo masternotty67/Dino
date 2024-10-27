@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dino Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { background: #f0f0f0; display: block; margin: auto; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let dino = { x: 50, y: 300, width: 50, height: 50, dy: 0, gravity: 1, isJumping: false };
+        let obstacles = [];
+        let coins = [];
+        let score = 0;
+        let gameOver = false;
+
+        function drawDino() {
+            ctx.fillStyle = 'green';
+            ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
+        }
+
+        function drawObstacles() {
+            ctx.fillStyle = 'red';
+            obstacles.forEach(obstacle => {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+        }
+
+        function drawCoins() {
+            ctx.fillStyle = 'gold';
+            coins.forEach(coin => {
+                ctx.fillRect(coin.x, coin.y, coin.width, coin.height);
+            });
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (gameOver) {
+                ctx.fillStyle = 'black';
+                ctx.font = '30px Arial';
+                ctx.fillText('Game Over!', canvas.width / 2 - 70, canvas.height / 2);
+                return;
+            }
+
+            // Gravity
+            if (dino.isJumping) {
+                dino.dy += dino.gravity;
+                dino.y += dino.dy;
+
+                if (dino.y >= 300) { // ground level
+                    dino.y = 300;
+                    dino.isJumping = false;
+                    dino.dy = 0;
+                }
+            }
+
+            drawDino();
+            drawObstacles();
+            drawCoins();
+
+            // Collision detection
+            checkCollisions();
+
+            // Move obstacles
+            obstacles.forEach(obstacle => {
+                obstacle.x -= 5; // Move left
+            });
+
+            // Remove off-screen obstacles
+            obstacles = obstacles.filter(obstacle => obstacle.x + obstacle.width > 0);
+            requestAnimationFrame(gameLoop);
+        }
+
+        function checkCollisions() {
+            // Check for collisions with obstacles
+            obstacles.forEach(obstacle => {
+                if (dino.x < obstacle.x + obstacle.width &&
+                    dino.x + dino.width > obstacle.x &&
+                    dino.y < obstacle.y + obstacle.height &&
+                    dino.y + dino.height > obstacle.y) {
+                    gameOver = true;
+                }
+            });
+
+            // Check for collisions with coins
+            coins.forEach(coin => {
+                if (dino.x < coin.x + coin.width &&
+                    dino.x + dino.width > coin.x &&
+                    dino.y < coin.y + coin.height &&
+                    dino.y + dino.height > coin.y) {
+                    score++;
+                    coins.splice(coins.indexOf(coin), 1); // Remove collected coin
+                }
+            });
+        }
+
+        // Key events
+        window.addEventListener('keydown', function(event) {
+            if (event.code === 'Space' && !dino.isJumping) {
+                dino.isJumping = true;
+                dino.dy = -15; // Jump force
+            }
+        });
+
+        // Generate obstacles and coins periodically
+        setInterval(() => {
+            obstacles.push({ x: canvas.width, y: 300, width: 50, height: 50 });
+        }, 2000);
+
+        setInterval(() => {
+            coins.push({ x: canvas.width, y: 250, width: 20, height: 20 });
+        }, 3000);
+
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>
